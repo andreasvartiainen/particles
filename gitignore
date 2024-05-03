@@ -1,0 +1,20 @@
+.*
+!.gitignore
+_*
+
+**.parquet
+**.map
+**.zip
+**.gz
+**.tar
+**.tgz
+**.mov
+**.mp4
+**.exe
+
+# images
+*.ico
+*.icns
+*.jpeg
+*.jpg
+*.icns

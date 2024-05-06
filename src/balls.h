@@ -1,3 +1,4 @@
+#pragma once
 #include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
@@ -65,6 +66,11 @@ void AddObject(ObjectList *list, float size, Vector2 position, Vector2 speed)
         if (list->objects[i] == NULL)
         {
             Object *object = malloc(sizeof(Object));
+            if (object == NULL)
+            {
+                free(object);
+                return;
+            }
             *object = (Object){
                 size,
                 position,
@@ -90,40 +96,4 @@ void TraverseList(ObjectList *list, void (*fn)(Object *))
         (*fn)(list->objects[i]);
         // UpdateObject(list->objects[i]);
     }
-}
-
-void MyDrawGrid(ObjectList *list)
-{
-    int collision_amount = {0};
-    for (int column = 0; column * GRID_SIZE < GetScreenWidth(); column++)
-        for (int row = 0; row * GRID_SIZE < GetScreenWidth(); row++)
-        {
-            {
-                Rectangle currentRectangle = {column * GRID_SIZE,
-                                              row * GRID_SIZE, GRID_SIZE, GRID_SIZE};
-                for (int i = 0; i < MAX_OBJECTS; i++)
-                {
-                    if (list->objects[i] != NULL)
-                    {
-
-                        if (CheckCollisionPointRec(list->objects[i]->pos, currentRectangle))
-                        {
-                            list->objects[i]->currentTile = currentRectangle;
-                            collision_amount += 1;
-                            if (collision_amount > 1)
-                            {
-                                list->objects[i]->collided = true;
-                            }
-                        }
-                    }
-                }
-                if (collision_amount >= 2)
-                    DrawRectangleRec(currentRectangle, (Color){0, 0, 255, 50});
-                else if (collision_amount > 0)
-                    DrawRectangleRec(currentRectangle, (Color){255, 0, 0, 50});
-                else
-                    DrawRectangleLinesEx(currentRectangle, 1, (Color){0, 0, 0, 50});
-                collision_amount = 0;
-            }
-        }
 }

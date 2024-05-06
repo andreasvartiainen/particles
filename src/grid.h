@@ -10,6 +10,7 @@ typedef struct
     // make it easier to calculate collisions
     Rectangle tile;
     Color color;
+    bool active;
 } Tile;
 
 typedef struct
@@ -21,7 +22,7 @@ typedef struct
     int tile_size;
 } Grid;
 
-Grid *InitGridDyn(int colums, int rows, int tile_size, Color color)
+Grid *InitGrid(int colums, int rows, int tile_size, Color color)
 {
     // create pointer to grid
     Grid *new_grid = (Grid *)malloc(sizeof(Grid));
@@ -65,6 +66,7 @@ Grid *InitGridDyn(int colums, int rows, int tile_size, Color color)
             Rectangle new_rect = {ii * tile_size, i * tile_size, tile_size, tile_size};
             new_grid->tiles2d[i][ii].tile = new_rect;
             new_grid->tiles2d[i][ii].color = color;
+            new_grid->tiles2d[i][ii].active = false;
         }
     }
 
@@ -88,9 +90,103 @@ void DeleteGrid(Grid *grid)
     printf("Grid Unallocated!\n");
 }
 
-void MyDrawGridDyn(const Grid *grid)
+Vector2 CheckMousePosition(Grid *grid)
 {
-    if (grid == NULL)
+    // if grid is not valid return 0 vector
+    if (grid == NULL || grid->columns <= 0 || grid->rows <= 0)
+    {
+        return (Vector2){-1};
+    }
+    // check all the tiles
+    for (int i = 0; i < grid->rows; i++)
+    {
+        for (int ii = 0; ii < grid->columns; ii++)
+        {
+            Tile *current = &grid->tiles2d[i][ii];
+            // tile match with the mouse position, return the tile position
+            // maybe could be possible or better to return a tile address?
+            if (CheckCollisionPointRec(GetMousePosition(), current->tile))
+            {
+                return (Vector2){i, ii};
+            }
+            // if (CheckCollisionPointRec(GetMousePosition(), current->tile))
+            // {
+            //     current->color = (Color){0, 0, 255, 20};
+            //     current->active = true;
+            // }
+            // else
+            // {
+            //     current->color = (Color){255, 0, 0, 20};
+            //     current->active = false;
+            // }
+        }
+    }
+    return (Vector2){-1};
+}
+
+void SetActiveTile(int row, int column, Grid *grid)
+{
+    // TODO: Ability to create 5 x 5 etc. pixel blocks
+    if (row >= grid->rows || column >= grid->columns)
+        return;
+    if (grid == NULL || column < 0 || row < 0)
+        return;
+    Tile *current = &grid->tiles2d[row][column];
+    if (current->active == false)
+    {
+        grid->tiles2d[row][column].active = true;
+        grid->tiles2d[row][column].color.r += GetRandomValue(-5, 0);
+        grid->tiles2d[row][column].color.g += GetRandomValue(-5, 5);
+        grid->tiles2d[row][column].color.b += GetRandomValue(-5, 5);
+    }
+}
+
+void SwapTiles(Tile *first, Tile *second)
+{
+    if (first == NULL || second == NULL)
+        return;
+    Tile temp = *first;
+    first->color = second->color;
+    first->active = second->active;
+    second->color = temp.color;
+    second->active = temp.active;
+}
+
+void UpdateGrid(Grid *grid)
+{
+    // update all tile positions and make the sand fall
+    for (int r = grid->rows - 1; r > 0; r--)
+    {
+        for (int c = grid->columns - 1; c >= 0; c--)
+        {
+            // get pointerst to current tiles, just to make things clearer
+            Tile *bottom_tile = &grid->tiles2d[r][c];
+            Tile *top_tile = &grid->tiles2d[r - 1][c];
+            Tile *left_tile = &grid->tiles2d[r][c - 1];
+            Tile *right_tile = &grid->tiles2d[r][c + 1];
+            // falling straight down
+            if (bottom_tile->active == false && top_tile->active == true)
+            {
+                SwapTiles(bottom_tile, top_tile);
+                // printf("Swap!\n");
+            }
+            if (right_tile->active == false && top_tile->active == true && c < grid->columns - 1)
+            {
+                SwapTiles(right_tile, top_tile);
+                // printf("Swap!\n");
+            }
+            if (left_tile->active == false && top_tile->active == true && c > 0)
+            {
+                SwapTiles(left_tile, top_tile);
+                // printf("Swap!\n");
+            }
+        }
+    }
+}
+
+void MyDrawGrid(const Grid *grid, bool draw_grid)
+{
+    if (grid == NULL || grid->columns <= 0 || grid->rows <= 0)
     {
         return;
     }
@@ -99,7 +195,10 @@ void MyDrawGridDyn(const Grid *grid)
         for (int ii = 0; ii < grid->columns; ii++)
         {
             const Tile *current = &grid->tiles2d[i][ii];
-            DrawRectangleLinesEx(current->tile, 0.8, current->color);
+            if (current->active)
+                DrawRectangleRec(current->tile, current->color);
+            else if (draw_grid)
+                DrawRectangleLinesEx(current->tile, 0.8, current->color);
         }
     }
 }

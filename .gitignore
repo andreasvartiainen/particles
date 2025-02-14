@@ -18,3 +18,5 @@ _*
 *.jpeg
 *.jpg
 *.icns
+out/Debug
+compile_commands.json
